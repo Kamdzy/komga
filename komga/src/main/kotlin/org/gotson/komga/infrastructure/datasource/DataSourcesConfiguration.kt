@@ -69,7 +69,7 @@ class DataSourcesConfiguration(
         this.dataSource = dataSource
         this.poolName = poolName
         this.maximumPoolSize = poolSize
-        this.connectionTimeout = 120000L // 2 minutes
+        this.connectionTimeout = 300000L // 5 minutes
         this.idleTimeout = 600000L // 10 minutes
       },
     )
