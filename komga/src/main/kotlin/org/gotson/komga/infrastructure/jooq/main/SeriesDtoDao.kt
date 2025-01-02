@@ -7,6 +7,7 @@ import org.gotson.komga.domain.model.SeriesSearch
 import org.gotson.komga.infrastructure.datasource.SqliteUdfDataSource
 import org.gotson.komga.infrastructure.jooq.RequiredJoin
 import org.gotson.komga.infrastructure.jooq.SeriesSearchHelper
+import org.gotson.komga.infrastructure.jooq.csAlias
 import org.gotson.komga.infrastructure.jooq.inOrNoCondition
 import org.gotson.komga.infrastructure.jooq.insertTempStrings
 import org.gotson.komga.infrastructure.jooq.noCase
@@ -94,6 +95,7 @@ class SeriesDtoDao(
       "collection.number" to cs.NUMBER,
       "name" to s.NAME.collate(SqliteUdfDataSource.COLLATION_UNICODE_3),
       "booksCount" to s.BOOK_COUNT,
+      "random" to DSL.rand(),
     )
 
   override fun findAll(pageable: Pageable): Page<SeriesDto> = findAll(SeriesSearch(), SearchContext.ofAnonymousUser(), pageable)
@@ -155,6 +157,10 @@ class SeriesDtoDao(
       .apply {
         joins.forEach { join ->
           when (join) {
+            is RequiredJoin.Collection -> {
+              val csAlias = csAlias(join.collectionId)
+              leftJoin(csAlias).on(s.ID.eq(csAlias.SERIES_ID).and(csAlias.COLLECTION_ID.eq(join.collectionId)))
+            }
             // always joined
             is RequiredJoin.ReadProgress -> Unit
             RequiredJoin.SeriesMetadata -> Unit
@@ -162,6 +168,7 @@ class SeriesDtoDao(
             RequiredJoin.Media -> Unit
             RequiredJoin.BookMetadata -> Unit
             RequiredJoin.BookMetadataAggregation -> Unit
+            is RequiredJoin.ReadList -> Unit
           }
         }
       }.where(conditionsRefined)
@@ -188,7 +195,7 @@ class SeriesDtoDao(
     joinOnCollection: Boolean = false,
   ): SelectOnConditionStep<Record> =
     dsl
-      .let { if (joinOnCollection) it.selectDistinct(*groupFields) else it.select(*groupFields) }
+      .select(*groupFields)
       .from(s)
       .leftJoin(d)
       .on(s.ID.eq(d.SERIES_ID))
@@ -198,9 +205,12 @@ class SeriesDtoDao(
       .on(s.ID.eq(rs.SERIES_ID))
       .and(readProgressConditionSeries(userId))
       .apply {
-        if (joinOnCollection)leftJoin(cs).on(s.ID.eq(cs.SERIES_ID))
         joins.forEach { join ->
           when (join) {
+            is RequiredJoin.Collection -> {
+              val csAlias = csAlias(join.collectionId)
+              leftJoin(csAlias).on(s.ID.eq(csAlias.SERIES_ID).and(csAlias.COLLECTION_ID.eq(join.collectionId)))
+            }
             // always joined
             is RequiredJoin.ReadProgress -> Unit
             RequiredJoin.SeriesMetadata -> Unit
@@ -208,6 +218,7 @@ class SeriesDtoDao(
             RequiredJoin.BookMetadata -> Unit
             RequiredJoin.BookMetadataAggregation -> Unit
             RequiredJoin.Media -> Unit
+            is RequiredJoin.ReadList -> Unit
           }
         }
       }
@@ -236,6 +247,10 @@ class SeriesDtoDao(
         .apply {
           joins.forEach { join ->
             when (join) {
+              is RequiredJoin.Collection -> {
+                val csAlias = csAlias(join.collectionId)
+                leftJoin(csAlias).on(s.ID.eq(csAlias.SERIES_ID).and(csAlias.COLLECTION_ID.eq(join.collectionId)))
+              }
               // always joined
               is RequiredJoin.ReadProgress -> Unit
               RequiredJoin.SeriesMetadata -> Unit
@@ -243,6 +258,7 @@ class SeriesDtoDao(
               RequiredJoin.BookMetadata -> Unit
               RequiredJoin.BookMetadataAggregation -> Unit
               RequiredJoin.Media -> Unit
+              is RequiredJoin.ReadList -> Unit
             }
           }
         }.where(conditions)
@@ -251,10 +267,17 @@ class SeriesDtoDao(
 
     val orderBy =
       pageable.sort.mapNotNull {
-        if (it.property == "relevance" && !seriesIds.isNullOrEmpty())
+        if (it.property == "relevance" && !seriesIds.isNullOrEmpty()) {
           s.ID.sortByValues(seriesIds, it.isAscending)
-        else
-          it.toSortField(sorts)
+        } else {
+          if (it.property == "collection.number") {
+            val collectionId = joins.filterIsInstance<RequiredJoin.Collection>().firstOrNull()?.collectionId ?: return@mapNotNull null
+            val f = csAlias(collectionId).NUMBER
+            if (it.isAscending) f.asc() else f.desc()
+          } else {
+            it.toSortField(sorts)
+          }
+        }
       }
 
     val dtos =

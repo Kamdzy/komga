@@ -972,6 +972,8 @@
     "folder_name": "Folder name",
     "name": "Name",
     "number": "Number",
+    "page_count": "Page count",
+    "random": "Random",
     "release_date": "Release date"
   },
   "theme": {
