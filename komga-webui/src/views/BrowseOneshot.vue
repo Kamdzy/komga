@@ -17,8 +17,8 @@
 
       <!--   Action menu   -->
       <oneshot-actions-menu v-if="book"
-                             :book="book"
-                             :series="series"
+                            :book="book"
+                            :series="series"
       />
 
       <v-btn icon @click="editBook" v-if="isAdmin">
@@ -249,7 +249,7 @@
 
               <v-row v-if="book.metadata.summary">
                 <v-col>
-                  <read-more>{{ book.metadata.summary }}</read-more>
+                  <read-more v-model="readMore">{{ book.metadata.summary }}</read-more>
                 </v-col>
               </v-row>
             </template>
@@ -295,7 +295,7 @@
 
         <v-row v-if="book.metadata.summary">
           <v-col>
-            <read-more>{{ book.metadata.summary }}</read-more>
+            <read-more v-model="readMore">{{ book.metadata.summary }}</read-more>
           </v-col>
         </v-row>
       </template>
@@ -416,10 +416,32 @@
 
       <v-row>
         <v-col cols="12" class="pb-1">
-          <collections-expansion-panels :collections="collections"/>
+          <collections-expansion-panels :collections="collections">
+            <template v-slot:prepend="props">
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on }">
+                  <v-btn icon class="me-2" v-on="on" @click="removeFromCollection(props.collection.id)">
+                    <v-icon>mdi-playlist-remove</v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('browse_book.remove_from_collection') }}</span>
+              </v-tooltip>
+            </template>
+          </collections-expansion-panels>
         </v-col>
         <v-col cols="12" class="pt-1">
-          <read-lists-expansion-panels :read-lists="readLists"/>
+          <read-lists-expansion-panels :read-lists="readLists">
+            <template v-slot:prepend="props">
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on }">
+                  <v-btn icon class="me-2" v-on="on" @click="removeFromReadList(props.readlist.id)">
+                    <v-icon>mdi-book-remove</v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('browse_book.remove_from_readlist') }}</span>
+              </v-tooltip>
+            </template>
+          </read-lists-expansion-panels>
         </v-col>
       </v-row>
 
@@ -429,6 +451,7 @@
           <v-chip
             v-for="(link, i) in book.metadata.links"
             :href="link.url"
+            rel="noreferrer"
             target="_blank"
             class="me-2"
             label
@@ -472,6 +495,28 @@
       <v-row class="align-center text-caption">
         <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.file') }}</v-col>
         <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{ book.url }}</v-col>
+      </v-row>
+
+      <v-row class="align-center text-caption">
+        <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.date_created') }}</v-col>
+        <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{
+            new Intl.DateTimeFormat($i18n.locale, {
+              dateStyle: 'long',
+              timeStyle: 'short'
+            }).format(new Date(book.created))
+          }}
+        </v-col>
+      </v-row>
+
+      <v-row class="align-center text-caption">
+        <v-col class="py-1 text-uppercase" cols="4" sm="3" md="2" xl="1">{{ $t('browse_book.date_modified') }}</v-col>
+        <v-col class="py-1" cols="8" sm="9" md="10" xl="11">{{
+            new Intl.DateTimeFormat($i18n.locale, {
+              dateStyle: 'long',
+              timeStyle: 'short'
+            }).format(new Date(book.lastModified))
+          }}
+        </v-col>
       </v-row>
 
     </v-container>
@@ -526,9 +571,12 @@ import {Oneshot, SeriesDto} from '@/types/komga-series'
 import CollectionsExpansionPanels from '@/components/CollectionsExpansionPanels.vue'
 import OneshotActionsMenu from '@/components/menus/OneshotActionsMenu.vue'
 import {
+  BookSearch,
   SearchConditionAgeRating,
-  SearchConditionGenre, SearchConditionLanguage,
+  SearchConditionGenre,
+  SearchConditionLanguage,
   SearchConditionPublisher,
+  SearchConditionSeriesId,
   SearchConditionTag,
   SearchOperatorIs,
 } from '@/types/komga-search'
@@ -561,6 +609,7 @@ export default Vue.extend({
       contextName: '',
       collections: [] as CollectionDto[],
       readLists: [] as ReadListDto[],
+      readMore: false,
     }
   },
   async created() {
@@ -602,6 +651,7 @@ export default Vue.extend({
   },
   async beforeRouteUpdate(to, from, next) {
     if (to.params.seriesId !== from.params.seriesId) {
+      this.readMore = false
       this.loadSeries(to.params.seriesId)
     }
 
@@ -744,7 +794,9 @@ export default Vue.extend({
       await this.loadBook(seriesId)
     },
     async loadBook(seriesId: string) {
-      this.book = (await this.$komgaSeries.getBooks(seriesId)).content[0]
+      this.book = (await this.$komgaBooks.getBooksList({
+        condition: new SearchConditionSeriesId(new SearchOperatorIs(seriesId)),
+      } as BookSearch)).content[0]
 
       // parse query params to get context and contextId
       if (this.$route.query.contextId && this.$route.query.context
@@ -797,6 +849,22 @@ export default Vue.extend({
     },
     editBook() {
       this.$store.dispatch('dialogUpdateOneshots', {series: this.series, book: this.book} as Oneshot)
+    },
+    removeFromReadList(readListId: string) {
+      const rl = this.readLists.find(x => x.id == readListId)
+      const modified = Object.assign({}, {bookIds: rl?.bookIds.filter(x => x != this.book.id)})
+      if (modified!.bookIds!.length == 0)
+        this.$komgaReadLists.deleteReadList(rl!.id)
+      else
+        this.$komgaReadLists.patchReadList(rl!.id, modified)
+    },
+    removeFromCollection(collectionId: string) {
+      const col = this.collections.find(x => x.id == collectionId)
+      const modified = Object.assign({}, {seriesIds: col?.seriesIds.filter(x => x != this.seriesId)})
+      if (modified!.seriesIds!.length == 0)
+        this.$komgaCollections.deleteCollection(col!.id)
+      else
+        this.$komgaCollections.patchCollection(col!.id, modified)
     },
   },
 })

@@ -25,7 +25,9 @@
       "generate_api_key": "Generate API key",
       "no_keys": "No API Keys created yet"
     },
-    "change_password": "change password"
+    "change_password": "change password",
+    "details": "Details",
+    "my_account": "My Account"
   },
   "announcements": {
     "mark_all_read": "Mark all as read",
@@ -93,6 +95,7 @@
     "beginning_of_book": "You're at the beginning of the book.",
     "changing_reading_direction": "Changing Reading Direction to",
     "cycling_page_layout": "Cycling Page Layout",
+    "cycling_page_margin": "Cycling Page Margin",
     "cycling_scale": "Cycling Scale",
     "cycling_side_padding": "Cycling Side Padding",
     "download_current_page": "Download current page",
@@ -135,6 +138,7 @@
       "general": "General",
       "gestures": "Gestures",
       "page_layout": "Page layout",
+      "page_margin": "Page margin",
       "paged": "Paginated Reader Options",
       "reading_mode": "Reading mode",
       "scale_type": "Scale type",
@@ -146,6 +150,7 @@
       "close": "Close",
       "cycle_page_layout": "Cycle page layout",
       "cycle_scale": "Cycle scale",
+      "cycle_page_margin": "Cycle page margin",
       "cycle_side_padding": "Cycle side padding",
       "first_page": "First page",
       "fullscreen": "Enter/exit full screen",
@@ -168,6 +173,8 @@
   },
   "browse_book": {
     "comment": "COMMENT",
+    "date_created": "CREATED",
+    "date_modified": "LAST MODIFIED",
     "download_file": "Download file",
     "file": "FILE",
     "format": "FORMAT",
@@ -177,6 +184,8 @@
     "outdated_tooltip": "The file for this book has changed, this book must be re-analyzed",
     "read_book": "Read book",
     "read_incognito": "Read incognito",
+    "remove_from_collection": "Remove book from collection",
+    "remove_from_readlist": "Remove book from read list",
     "size": "SIZE"
   },
   "browse_collection": {
@@ -191,6 +200,7 @@
   },
   "browse_series": {
     "earliest_year_from_release_dates": "This is the earliest year from the release dates from all books in the series",
+    "remove_from_collection": "Remove series from collection",
     "series_no_summary": "This series has no summary, so we picked one for you!",
     "summary_from_book": "Summary from book {number}:"
   },
@@ -221,8 +231,10 @@
     "dismiss": "Dismiss",
     "download": "Download",
     "drag_drop": "drag and drop",
+    "duplicate": "Duplicate",
     "email": "Email",
     "epub": "Epub",
+    "error": "Error",
     "filename": "Filename",
     "filter_no_matches": "The active filter has no matches",
     "genre": "Genre",
@@ -237,6 +249,7 @@
     "lock_all": "Lock all",
     "n_selected": "{count} selected",
     "nothing_to_show": "Nothing to show",
+    "ok": "OK",
     "oneshot": "One-shot",
     "outdated": "Outdated",
     "page": "Page",
@@ -283,6 +296,7 @@
     "comicrack_preambule_html": "You can import existing ComicRack Reading Lists in <code>.cbl</code> format.<br/>Komga will try to match the provided series and book number with series and books in your libraries.",
     "dialog_confirmation": {
       "body": "{unmatched} / {total} books are unmatched",
+      "body2": "{duplicates} / {total} books are duplicated",
       "create": "Create anyway",
       "title": "Some books are not matched"
     },
@@ -635,6 +649,7 @@
     "delete_to_save": "Delete to save {size}",
     "deleted_count": "Deleted {count} times",
     "empty_title": "No duplicate pages found",
+    "empty_title_known": "No known duplicates",
     "filter": {
       "count": "Count",
       "date_added": "Date added",
@@ -650,7 +665,7 @@
     "matches_n": "No matches | 1 match | {count} matches",
     "new": "New",
     "saved_size": "Saved {size}",
-    "title": "Duplicate pages",
+    "title": "Duplicate Pages",
     "unknown_size": "Unknown size"
   },
   "duplicates": {
@@ -687,6 +702,11 @@
       "BookImported": "Book imported",
       "DuplicatePageDeleted": "Duplicate page deleted",
       "SeriesFolderDeleted": "Series folder deleted"
+    },
+    "media_profile": {
+      "DIVINA": "DIVINA",
+      "EPUB": "EPUB",
+      "PDF": "PDF"
     },
     "media_status": {
       "ERROR": "Error",
@@ -736,8 +756,10 @@
   "epubreader": {
     "current_chapter": "Current chapter",
     "page_of": "Page {page} of {count}",
+    "publisher_font": "Publisher",
     "settings": {
       "column_count": "Column count",
+      "font_family": "Font",
       "layout": "Layout",
       "layout_paginated": "Paginated",
       "layout_scroll": "Scroll",
@@ -799,11 +821,13 @@
   "filter": {
     "age_rating": "age rating",
     "age_rating_none": "None",
+    "any": "Any",
     "complete": "Complete",
     "genre": "genre",
     "in_progress": "In Progress",
     "language": "language",
     "library": "library",
+    "media_profile": "Media profile",
     "oneshot": "One-shot",
     "publisher": "publisher",
     "read": "Read",
@@ -844,7 +868,7 @@
   },
   "media_analysis": {
     "comment": "Comment",
-    "media_analysis": "Media analysis",
+    "media_analysis": "Media Analysis",
     "media_type": "Media Type",
     "name": "Name",
     "size": "Size",
@@ -881,6 +905,9 @@
     "tasks_executed": "Tasks executed",
     "tasks_total_time": "Tasks total time",
     "title": "Metrics"
+  },
+  "missing_posters": {
+    "title": "Missing Posters"
   },
   "navigation": {
     "home": "Home",

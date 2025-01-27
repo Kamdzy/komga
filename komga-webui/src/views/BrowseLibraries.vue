@@ -4,6 +4,7 @@
       <!--   Action menu   -->
       <library-actions-menu v-if="library"
                             :library="library"/>
+      <libraries-actions-menu v-else/>
 
       <v-toolbar-title>
         <span>{{ library ? library.name : $t('common.all_libraries') }}</span>
@@ -165,8 +166,9 @@ import AlphabeticalNavigation from '@/components/AlphabeticalNavigation.vue'
 import {LibraryDto} from '@/types/komga-libraries'
 import {ItemContext} from '@/types/items'
 import {
+  BookSearch,
   SearchConditionAgeRating,
-  SearchConditionAllOfSeries,
+  SearchConditionAllOfSeries, SearchConditionAnyOfBook,
   SearchConditionAnyOfSeries,
   SearchConditionAuthor,
   SearchConditionComplete,
@@ -178,6 +180,7 @@ import {
   SearchConditionReadStatus,
   SearchConditionReleaseDate,
   SearchConditionSeries,
+  SearchConditionSeriesId,
   SearchConditionSeriesStatus,
   SearchConditionSharingLabel,
   SearchConditionTag,
@@ -196,10 +199,21 @@ import {
 } from '@/types/komga-search'
 import i18n from '@/i18n'
 import {objIsEqual} from '@/functions/object'
+import {
+  FILTER_ANY,
+  FILTER_NONE,
+  FilterMode,
+  FiltersActive,
+  FiltersActiveMode,
+  FiltersOptions,
+  NameValue,
+} from '@/types/filter'
+import LibrariesActionsMenu from '@/components/menus/LibrariesActionsMenu.vue'
 
 export default Vue.extend({
   name: 'BrowseLibraries',
   components: {
+    LibrariesActionsMenu,
     AlphabeticalNavigation,
     LibraryActionsMenu,
     EmptyState,
@@ -401,6 +415,11 @@ export default Vue.extend({
               .content
               .map(x => x.name)
           },
+          values: [{
+            name: this.$t('filter.any').toString(),
+            value: FILTER_ANY,
+            nValue: FILTER_NONE,
+          }],
           anyAllSelector: true,
         }
       })
@@ -520,7 +539,7 @@ export default Vue.extend({
 
       // get filter mode from query params or local storage
       let activeFiltersMode: any
-      if(route.query.filterMode) {
+      if (route.query.filterMode) {
         activeFiltersMode = route.query.filterMode
       } else {
         activeFiltersMode = this.$store.getters.getLibraryFilterMode(route.params.libraryId) || {} as FiltersActiveMode
@@ -615,6 +634,7 @@ export default Vue.extend({
     },
     async loadLibrary(libraryId: string) {
       this.library = this.getLibraryLazy(libraryId)
+      if (this.library != undefined) document.title = `Komga - ${this.library.name}`
 
       await this.loadPage(libraryId, this.page, this.sortActive, this.symbolCondition)
     },
@@ -655,19 +675,30 @@ export default Vue.extend({
       if (this.filters.readStatus && this.filters.readStatus.length > 0) conditions.push(new SearchConditionAnyOfSeries(this.filters.readStatus))
       if (this.filters.genre && this.filters.genre.length > 0) this.filtersMode?.genre?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.genre)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.genre))
       if (this.filters.tag && this.filters.tag.length > 0) this.filtersMode?.tag?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.tag)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.tag))
-      if (this.filters.language && this.filters.language.length > 0) this.filtersMode?.language?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.language)):conditions.push(new SearchConditionAnyOfSeries(this.filters.language))
+      if (this.filters.language && this.filters.language.length > 0) this.filtersMode?.language?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.language)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.language))
       if (this.filters.publisher && this.filters.publisher.length > 0) this.filtersMode?.publisher?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.publisher)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.publisher))
-      if (this.filters.ageRating && this.filters.ageRating.length > 0) this.filtersMode?.ageRating?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.ageRating)):conditions.push(new SearchConditionAnyOfSeries(this.filters.ageRating))
+      if (this.filters.ageRating && this.filters.ageRating.length > 0) this.filtersMode?.ageRating?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.ageRating)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.ageRating))
       if (this.filters.releaseDate && this.filters.releaseDate.length > 0) this.filtersMode?.releaseDate?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.releaseDate)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.releaseDate))
       if (this.filters.sharingLabel && this.filters.sharingLabel.length > 0) this.filtersMode?.sharingLabel?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.sharingLabel)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.sharingLabel))
       if (this.filters.complete && this.filters.complete.length > 0) conditions.push(...this.filters.complete)
       if (this.filters.oneshot && this.filters.oneshot.length > 0) conditions.push(...this.filters.oneshot)
       authorRoles.forEach((role: string) => {
         if (role in this.filters) {
-          const authorConditions = this.filters[role].map((name: string) => new SearchConditionAuthor(new SearchOperatorIs({
-            name: name,
-            role: role,
-          })))
+          const authorConditions = this.filters[role].map((name: string) => {
+            if (name === FILTER_ANY)
+              return new SearchConditionAuthor(new SearchOperatorIs({
+                role: role,
+              }))
+            else if (name === FILTER_NONE)
+              return new SearchConditionAuthor(new SearchOperatorIsNot({
+                role: role,
+              }))
+            else
+              return new SearchConditionAuthor(new SearchOperatorIs({
+                name: name,
+                role: role,
+              }))
+          })
           conditions.push(this.filtersMode[role]?.allOf ? new SearchConditionAllOfSeries(authorConditions) : new SearchConditionAnyOfSeries(authorConditions))
         }
       })
@@ -719,19 +750,26 @@ export default Vue.extend({
       this.$store.dispatch('dialogAddSeriesToCollection', this.selectedSeries.map(s => s.id))
     },
     async addToReadList() {
-      const books = await Promise.all(this.selectedSeries.map(s => this.$komgaSeries.getBooks(s.id)))
-      this.$store.dispatch('dialogAddBooksToReadList', books.map(b => b.content[0].id))
+      const conditions = this.selectedSeries.map(s => new SearchConditionSeriesId(new SearchOperatorIs(s.id)))
+      const books = await this.$komgaBooks.getBooksList({
+        condition: new SearchConditionAnyOfBook(conditions),
+      } as BookSearch, {unpaged: true})
+      this.$store.dispatch('dialogAddBooksToReadList', books.content.map(b => b.id))
     },
     async editSingleSeries(series: SeriesDto) {
       if (series.oneshot) {
-        const book = (await this.$komgaSeries.getBooks(series.id)).content[0]
+        const book = (await this.$komgaBooks.getBooksList({
+          condition: new SearchConditionSeriesId(new SearchOperatorIs(series.id)),
+        } as BookSearch)).content[0]
         this.$store.dispatch('dialogUpdateOneshots', {series: series, book: book})
       } else
         this.$store.dispatch('dialogUpdateSeries', series)
     },
     async editMultipleSeries() {
       if (this.selectedOneshots) {
-        const books = await Promise.all(this.selectedSeries.map(s => this.$komgaSeries.getBooks(s.id)))
+        const books = await Promise.all(this.selectedSeries.map(s => this.$komgaBooks.getBooksList({
+          condition: new SearchConditionSeriesId(new SearchOperatorIs(s.id)),
+        } as BookSearch)))
         const oneshots = this.selectedSeries.map((s, index) => ({series: s, book: books[index].content[0]} as Oneshot))
         this.$store.dispatch('dialogUpdateOneshots', oneshots)
       } else
