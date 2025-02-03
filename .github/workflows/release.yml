@@ -10,7 +10,7 @@ on:
       bump:
         description: "Bump type"
         required: false
-        default: "next"
+        default: "current"
         type: choice
         options:
           - "next"
