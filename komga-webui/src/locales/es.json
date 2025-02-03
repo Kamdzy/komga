@@ -247,6 +247,7 @@
     "locale_name": "Español",
     "locale_rtl": "false",
     "lock_all": "Bloquear todas",
+    "media": "Multimedia",
     "n_selected": "{count} seleccionado(s)",
     "nothing_to_show": "Nada que mostrar",
     "ok": "OK",
@@ -271,6 +272,7 @@
     "roles": "Funciones",
     "save_changes": "Guardar cambios",
     "series": "Serie | Series",
+    "settings": "Ajustes",
     "sidecars": "Sidecars",
     "tags": "Etiquetas",
     "unavailable": "No disponible",
@@ -874,9 +876,6 @@
     "size": "Tamaño",
     "status": "Estado",
     "url": "URL"
-  },
-  "media_management": {
-    "title": "Admón. de medios"
   },
   "menu": {
     "add_to_collection": "Añadir a colección",

@@ -25,7 +25,9 @@
       "generate_api_key": "Créer une clé API",
       "no_keys": "Aucune clé API créée"
     },
-    "change_password": "modifier le mot de passe"
+    "change_password": "modifier le mot de passe",
+    "details": "Détails",
+    "my_account": "Mon Compte"
   },
   "announcements": {
     "mark_all_read": "Marquer tous comme lus",
@@ -852,9 +854,6 @@
     "size": "Taille",
     "status": "Statut",
     "url": "URL"
-  },
-  "media_management": {
-    "title": "Gestion des médias"
   },
   "menu": {
     "add_to_collection": "Ajouter à la collection",
