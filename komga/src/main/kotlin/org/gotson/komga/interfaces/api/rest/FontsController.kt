@@ -1,7 +1,11 @@
 package org.gotson.komga.interfaces.api.rest
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.commons.io.FilenameUtils
 import org.gotson.komga.infrastructure.configuration.KomgaProperties
+import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration
 import org.gotson.komga.language.contains
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.FileSystemResource
@@ -28,6 +32,7 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 @RequestMapping(value = ["api/v1/fonts"], produces = [MediaType.APPLICATION_JSON_VALUE])
+@Tag(name = OpenApiConfiguration.TagNames.BOOK_FONTS)
 class FontsController(
   komgaProperties: KomgaProperties,
 ) {
@@ -41,9 +46,9 @@ class FontsController(
         resolver
           .getResources("/embeddedFonts/**/*.*")
           .filterNot { it.filename == null }
-          .filter { supportedExtensions.contains(Path(it.uri.toString()).extension, true) }
+          .filter { supportedExtensions.contains(FilenameUtils.getExtension(it.uri.toString()), true) }
           .groupBy {
-            Path(it.uri.toString()).parent.name
+            FilenameUtils.getName(FilenameUtils.getPathNoEndSeparator(it.uri.toString()))
           }
       } catch (e: Exception) {
         logger.error(e) { "Could not load embedded fonts" }
@@ -81,16 +86,18 @@ class FontsController(
   }
 
   @GetMapping("families")
+  @Operation(summary = "List font families", description = "List all available font families.")
   fun listFonts(): Set<String> = fonts.keys
 
   @GetMapping("resource/{fontFamily}/{fontFile}")
+  @Operation(summary = "Download font file")
   fun getFontFile(
     @PathVariable fontFamily: String,
     @PathVariable fontFile: String,
   ): ResponseEntity<Resource> {
     fonts[fontFamily]?.let { resources ->
       val resource = resources.firstOrNull { it.filename == fontFile } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
-      val mediaType = "font/${Path(resource.uri.toString()).extension.lowercase()}"
+      val mediaType = "font/${FilenameUtils.getExtension(resource.uri.toString()).lowercase()}"
       return ResponseEntity
         .ok()
         .headers {
@@ -105,11 +112,12 @@ class FontsController(
   }
 
   @GetMapping("resource/{fontFamily}/css", produces = ["text/css"])
+  @Operation(summary = "Download CSS file", description = "Download a CSS file with the @font-face block for the font family. This is used by the Epub Reader to change fonts.")
   fun getFontFamilyAsCss(
     @PathVariable fontFamily: String,
   ): ResponseEntity<Resource> {
     fonts[fontFamily]?.let { files ->
-      val groups = files.groupBy { getFontCharacteristics(Path(it.uri.toString()).name) }
+      val groups = files.groupBy { getFontCharacteristics(FilenameUtils.getName(it.uri.toString())) }
 
       val css =
         groups
@@ -135,14 +143,14 @@ class FontsController(
   ): String {
     val srcBlock =
       fonts.joinToString(separator = ",", postfix = ";") { resource ->
-        val path = Path(resource.uri.toString())
+        val filename = FilenameUtils.getName(resource.uri.toString())
         val format =
-          when (val extension = path.extension.lowercase()) {
+          when (val extension = FilenameUtils.getExtension(resource.uri.toString()).lowercase()) {
             "ttf" -> "truetype"
             "otf" -> "opentype"
             else -> extension
           }
-        """url('${path.name}') format('$format')"""
+        """url('$filename') format('$format')"""
       }
     // language=CSS
     return """

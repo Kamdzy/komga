@@ -4,10 +4,9 @@
       <!--   Action menu   -->
       <library-actions-menu v-if="library"
                             :library="library"/>
-      <libraries-actions-menu v-else/>
 
       <v-toolbar-title>
-        <span>{{ library ? library.name : $t('common.all_libraries') }}</span>
+        <span>{{ toolbarTitle }}</span>
         <v-chip label class="mx-4" v-if="totalElements">
           <span style="font-size: 1.1rem">{{ totalElements }}</span>
         </v-chip>
@@ -75,7 +74,7 @@
     <v-container fluid>
       <alphabetical-navigation
         class="text-center"
-        :symbols="alphabeticalNavigation"
+        :symbols="seriesGroupingKeys"
         :selected="selectedSymbol"
         :group-count="seriesGroups"
         @clicked="filterByStarting"
@@ -168,7 +167,8 @@ import {ItemContext} from '@/types/items'
 import {
   BookSearch,
   SearchConditionAgeRating,
-  SearchConditionAllOfSeries, SearchConditionAnyOfBook,
+  SearchConditionAllOfSeries,
+  SearchConditionAnyOfBook,
   SearchConditionAnyOfSeries,
   SearchConditionAuthor,
   SearchConditionComplete,
@@ -208,12 +208,11 @@ import {
   FiltersOptions,
   NameValue,
 } from '@/types/filter'
-import LibrariesActionsMenu from '@/components/menus/LibrariesActionsMenu.vue'
+import {CLIENT_SETTING, ClientSettingsSeriesGroup, SERIES_GROUP_ALPHA} from '@/types/komga-clientsettings'
 
 export default Vue.extend({
   name: 'BrowseLibraries',
   components: {
-    LibrariesActionsMenu,
     AlphabeticalNavigation,
     LibraryActionsMenu,
     EmptyState,
@@ -229,10 +228,8 @@ export default Vue.extend({
   },
   data: function () {
     return {
-      library: undefined as LibraryDto | undefined,
       series: [] as SeriesDto[],
       seriesGroups: [] as GroupCountDto[],
-      alphabeticalNavigation: ['ALL', '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
       selectedSymbol: 'ALL',
       selectedSeries: [] as SeriesDto[],
       page: 1,
@@ -264,6 +261,14 @@ export default Vue.extend({
     libraryId: {
       type: String,
       default: LIBRARIES_ALL,
+    },
+  },
+  watch: {
+    '$store.getters.getLibrariesPinned': {
+      handler(val) {
+        if (this.libraryId === LIBRARIES_ALL)
+          this.loadLibrary(this.libraryId)
+      },
     },
   },
   created() {
@@ -319,14 +324,42 @@ export default Vue.extend({
     next()
   },
   computed: {
+    seriesGrouping(): Record<string, string[]> {
+      let s: Record<string, string[]>
+      try {
+        s = (JSON.parse(this.$store.getters.getClientSettings[CLIENT_SETTING.WEBUI_SERIES_GROUPS].value) as ClientSettingsSeriesGroup).groups
+      } catch (_) {
+        s = SERIES_GROUP_ALPHA.groups
+      }
+      return s
+    },
+    seriesGroupingKeys(): string[] {
+      return ['ALL', '#', ...this.$_.keys(this.seriesGrouping)]
+    },
+    seriesGroupingValues(): string[] {
+      return this.$_(this.seriesGrouping).values().flatten().map(this.$_.lowerCase).toArray() as unknown as string[]
+    },
+    library(): LibraryDto | undefined {
+      return this.getLibraryLazy(this.libraryId)
+    },
+    requestLibraryIds(): string[] {
+      return this.libraryId !== LIBRARIES_ALL ? [this.libraryId] : this.$store.getters.getLibrariesPinned.map((it: LibraryDto) => it.id)
+    },
+    toolbarTitle(): string {
+      if (this.library) return this.library.name
+      else if (this.$store.getters.getLibrariesPinned.length > 0) return this.$t('common.pinned_libraries').toString()
+      else return this.$t('common.all_libraries').toString()
+    },
     symbolCondition(): SearchConditionSeries | undefined {
       if (this.selectedSymbol === 'ALL') return undefined
       if (this.selectedSymbol === '#') return new SearchConditionAllOfSeries(
-        this.alphabeticalNavigation
-          .filter(it => it !== 'ALL' && it !== '#')
+        this.seriesGroupingValues
           .map(it => new SearchConditionTitleSort(new SearchOperatorDoesNotBeginWith(it))),
       )
-      return new SearchConditionTitleSort(new SearchOperatorBeginsWith(this.selectedSymbol))
+      return new SearchConditionAnyOfSeries(
+        this.seriesGrouping[this.selectedSymbol]
+          .map(it => new SearchConditionTitleSort(new SearchOperatorBeginsWith(it))),
+      )
     },
     itemContext(): ItemContext[] {
       if (this.sortActive.key === 'booksMetadata.releaseDate') return [ItemContext.RELEASE_DATE]
@@ -411,7 +444,7 @@ export default Vue.extend({
         r[role] = {
           name: this.$t(`author_roles.${role}`).toString(),
           search: async search => {
-            return (await this.$komgaReferential.getAuthors(search, role, this.libraryId !== LIBRARIES_ALL ? this.libraryId : undefined))
+            return (await this.$komgaReferential.getAuthors(search, role, this.requestLibraryIds))
               .content
               .map(x => x.name)
           },
@@ -471,17 +504,17 @@ export default Vue.extend({
         this.$store.getters.getLibrarySort(route.params.libraryId) ||
         this.$_.clone(this.sortDefault)
 
-      const requestLibraryId = libraryId !== LIBRARIES_ALL ? libraryId : undefined
+      const requestLibraryIds = libraryId !== LIBRARIES_ALL ? [libraryId] : this.$store.getters.getLibrariesPinned.map((it: LibraryDto) => it.id)
 
       // load dynamic filters
       const [genres, tags, publishers, languages, ageRatings, releaseDates, sharingLabels] = await Promise.all([
-        this.$komgaReferential.getGenres(requestLibraryId),
-        this.$komgaReferential.getSeriesAndBookTags(requestLibraryId),
-        this.$komgaReferential.getPublishers(requestLibraryId),
-        this.$komgaReferential.getLanguages(requestLibraryId),
-        this.$komgaReferential.getAgeRatings(requestLibraryId),
-        this.$komgaReferential.getSeriesReleaseDates(requestLibraryId),
-        this.$komgaReferential.getSharingLabels(requestLibraryId),
+        this.$komgaReferential.getGenres(requestLibraryIds),
+        this.$komgaReferential.getSeriesAndBookTags(requestLibraryIds),
+        this.$komgaReferential.getPublishers(requestLibraryIds),
+        this.$komgaReferential.getLanguages(requestLibraryIds),
+        this.$komgaReferential.getAgeRatings(requestLibraryIds),
+        this.$komgaReferential.getSeriesReleaseDates(requestLibraryIds),
+        this.$komgaReferential.getSharingLabels(requestLibraryIds),
       ])
       this.$set(this.filterOptions, 'genre', toNameValueCondition(genres, x => new SearchConditionGenre(new SearchOperatorIs(x)), x => new SearchConditionGenre(new SearchOperatorIsNot(x))))
       this.$set(this.filterOptions, 'tag', toNameValueCondition(tags, x => new SearchConditionTag(new SearchOperatorIs(x)), x => new SearchConditionTag(new SearchOperatorIsNot(x))))
@@ -633,7 +666,6 @@ export default Vue.extend({
       if (this.series.some(b => b.id === event.seriesId)) this.reloadPage()
     },
     async loadLibrary(libraryId: string) {
-      this.library = this.getLibraryLazy(libraryId)
       if (this.library != undefined) document.title = `Komga - ${this.library.name}`
 
       await this.loadPage(libraryId, this.page, this.sortActive, this.symbolCondition)
@@ -671,6 +703,11 @@ export default Vue.extend({
 
       const conditions = [] as SearchConditionSeries[]
       if (libraryId !== LIBRARIES_ALL) conditions.push(new SearchConditionLibraryId(new SearchOperatorIs(libraryId)))
+      else {
+        conditions.push(new SearchConditionAnyOfSeries(
+          this.$store.getters.getLibrariesPinned.map((it: LibraryDto) => new SearchConditionLibraryId(new SearchOperatorIs(it.id))),
+        ))
+      }
       if (this.filters.status && this.filters.status.length > 0) this.filtersMode?.status?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.status)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.status))
       if (this.filters.readStatus && this.filters.readStatus.length > 0) conditions.push(new SearchConditionAnyOfSeries(this.filters.readStatus))
       if (this.filters.genre && this.filters.genre.length > 0) this.filtersMode?.genre?.allOf ? conditions.push(new SearchConditionAllOfSeries(this.filters.genre)) : conditions.push(new SearchConditionAnyOfSeries(this.filters.genre))
@@ -718,11 +755,11 @@ export default Vue.extend({
         condition: new SearchConditionAllOfSeries(groupConditions),
       } as SeriesSearch)
       const nonAlpha = seriesGroups
-        .filter((g) => !(/[a-zA-Z]/).test(g.group))
+        .filter((g) => !this.seriesGroupingValues.includes(g.group))
         .reduce((a, b) => a + b.count, 0)
       const all = seriesGroups.reduce((a, b) => a + b.count, 0)
       this.seriesGroups = [
-        ...seriesGroups.filter((g) => (/[a-zA-Z]/).test(g.group)),
+        ...seriesGroups.filter((g) => this.seriesGroupingValues.includes(g.group)),
         {group: '#', count: nonAlpha} as GroupCountDto,
         {group: 'ALL', count: all} as GroupCountDto,
       ]

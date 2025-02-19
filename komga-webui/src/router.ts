@@ -21,6 +21,14 @@ const noLibraryGuard = (to: any, from: any, next: any) => {
   } else next()
 }
 
+const noLibraryNorPinGuard = (to: any, from: any, next: any) => {
+  if (lStore.state.komgaLibraries.libraries.length === 0) {
+    next({name: 'welcome'})
+  } else if (lStore.getters.getLibrariesPinned.length === 0) {
+    next({name: 'no-pins'})
+  } else next()
+}
+
 const getLibraryRoute = (libraryId: string) => {
   switch ((lStore.getters.getLibraryRoute(libraryId) as LIBRARY_ROUTE)) {
     case LIBRARY_ROUTE.COLLECTIONS:
@@ -29,6 +37,8 @@ const getLibraryRoute = (libraryId: string) => {
       return 'browse-readlists'
     case LIBRARY_ROUTE.BROWSE:
       return 'browse-libraries'
+    case LIBRARY_ROUTE.BOOKS:
+      return 'browse-books'
     case LIBRARY_ROUTE.RECOMMENDED:
     default:
       return libraryId === LIBRARIES_ALL ? 'browse-libraries' : 'recommended-libraries'
@@ -58,9 +68,14 @@ const router = new Router({
           component: () => import(/* webpackChunkName: "welcome" */ './views/WelcomeView.vue'),
         },
         {
+          path: '/no-pins',
+          name: 'no-pins',
+          component: () => import(/* webpackChunkName: "no-pins" */ './views/NoPinnedLibraries.vue'),
+        },
+        {
           path: '/dashboard',
           name: 'dashboard',
-          beforeEnter: noLibraryGuard,
+          beforeEnter: noLibraryNorPinGuard,
           component: () => import(/* webpackChunkName: "dashboard" */ './views/DashboardView.vue'),
         },
         {
@@ -81,6 +96,12 @@ const router = new Router({
           name: 'settings-server',
           beforeEnter: adminGuard,
           component: () => import(/* webpackChunkName: "settings-server" */ './views/SettingsServer.vue'),
+        },
+        {
+          path: '/settings/ui',
+          name: 'settings-ui',
+          beforeEnter: adminGuard,
+          component: () => import(/* webpackChunkName: "settings-ui" */ './views/UISettings.vue'),
         },
         {
           path: '/settings/metrics',
@@ -133,6 +154,7 @@ const router = new Router({
         {
           path: '/history',
           name: 'history',
+          beforeEnter: adminGuard,
           component: () => import(/* webpackChunkName: "history" */ './views/HistoryView.vue'),
         },
         {
@@ -144,6 +166,11 @@ const router = new Router({
           path: '/account/api-keys',
           name: 'account-api-keys',
           component: () => import(/* webpackChunkName: "account-api-keys" */ './views/ApiKeys.vue'),
+        },
+        {
+          path: '/account/settings-ui',
+          name: 'account-settings-ui',
+          component: () => import(/* webpackChunkName: "account-settings-ui" */ './views/UIUserSettings.vue'),
         },
         {
           path: '/account/authentication-activity',
@@ -163,6 +190,13 @@ const router = new Router({
           name: 'recommended-libraries',
           beforeEnter: noLibraryGuard,
           component: () => import(/* webpackChunkName: "dashboard" */ './views/DashboardView.vue'),
+          props: (route) => ({libraryId: route.params.libraryId}),
+        },
+        {
+          path: '/libraries/:libraryId/books',
+          name: 'browse-books',
+          beforeEnter: noLibraryGuard,
+          component: () => import(/* webpackChunkName: "browse-books" */ './views/BrowseBooks.vue'),
           props: (route) => ({libraryId: route.params.libraryId}),
         },
         {
@@ -276,7 +310,7 @@ const router = new Router({
 
 router.beforeEach((to, from, next) => {
   // avoid document.title flickering when changing route
-  if (!['read-book', 'read-epub', 'browse-book', 'browse-oneshot', 'browse-series', 'browse-libraries',
+  if (!['read-book', 'read-epub', 'browse-book', 'browse-oneshot', 'browse-series', 'browse-libraries', 'browse-books',
     'recommended-libraries', 'browse-collection', 'browse-collections', 'browse-readlist', 'browse-readlists'].includes(<string>to.name)
   ) {
     document.title = 'Komga'
