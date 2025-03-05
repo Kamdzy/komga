@@ -1,10 +1,7 @@
 name: Dispatch events
 
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - '**/openapi.json'
+  workflow_dispatch:
 
 jobs:
   dispatch:
