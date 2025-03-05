@@ -3,13 +3,14 @@ package org.gotson.komga.interfaces.api.rest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import org.gotson.komga.infrastructure.jooq.main.ClientSettingsDtoDao
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration
 import org.gotson.komga.infrastructure.security.KomgaPrincipal
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration
 import org.gotson.komga.interfaces.api.rest.dto.ClientSettingDto
 import org.gotson.komga.interfaces.api.rest.dto.ClientSettingGlobalUpdateDto
 import org.gotson.komga.interfaces.api.rest.dto.ClientSettingUserUpdateDto
@@ -38,6 +39,7 @@ class ClientSettingsController(
 ) {
   @GetMapping("global/list")
   @Operation(summary = "Retrieve global client settings", description = "For unauthenticated users, only settings with 'allowUnauthorized=true' will be returned.")
+  @SecurityRequirements
   fun getGlobalSettings(
     @AuthenticationPrincipal principal: KomgaPrincipal?,
   ): Map<String, ClientSettingDto> = clientSettingsDtoDao.findAllGlobal(principal == null)
@@ -128,6 +130,7 @@ class ClientSettingsController(
 
   @DeleteMapping("global")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Delete global settings", description = "Setting key should be a valid lowercase namespace string like 'application.domain.key'")
   @OASRequestBody(
     content = [

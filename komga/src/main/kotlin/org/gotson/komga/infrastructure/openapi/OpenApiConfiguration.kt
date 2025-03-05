@@ -1,4 +1,4 @@
-package org.gotson.komga.infrastructure.swagger
+package org.gotson.komga.infrastructure.openapi
 
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.ExternalDocumentation
@@ -9,56 +9,70 @@ import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.info.License
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
+import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.servers.ServerVariable
 import io.swagger.v3.oas.models.servers.ServerVariables
 import io.swagger.v3.oas.models.tags.Tag
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.ANNOUNCEMENTS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.API_KEYS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.BOOKS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.BOOK_FONTS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.BOOK_IMPORT
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.BOOK_PAGES
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.BOOK_POSTER
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.BOOK_WEBPUB
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.CLAIM
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.CLIENT_SETTINGS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.COLLECTIONS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.COLLECTION_POSTER
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.COLLECTION_SERIES
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.COMICRACK
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.CURRENT_USER
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.DEPRECATED
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.DUPLICATE_PAGES
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.FILE_SYSTEM
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.HISTORY
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.LIBRARIES
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.MIHON
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.OAUTH2
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.READLISTS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.READLIST_BOOKS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.READLIST_POSTER
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.REFERENTIAL
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.RELEASES
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.SERIES
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.SERIES_POSTER
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.SERVER_SETTINGS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.SYNCPOINTS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.TASKS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.USERS
-import org.gotson.komga.infrastructure.swagger.OpenApiConfiguration.TagNames.USER_SESSION
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.ANNOUNCEMENTS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.API_KEYS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.BOOKS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.BOOK_FONTS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.BOOK_IMPORT
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.BOOK_PAGES
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.BOOK_POSTER
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.BOOK_WEBPUB
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.CLAIM
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.CLIENT_SETTINGS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.COLLECTIONS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.COLLECTION_POSTER
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.COLLECTION_SERIES
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.COMICRACK
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.CURRENT_USER
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.DEPRECATED
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.DUPLICATE_PAGES
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.FILE_SYSTEM
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.HISTORY
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.LIBRARIES
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.MIHON
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.OAUTH2
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.READLISTS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.READLIST_BOOKS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.READLIST_POSTER
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.REFERENTIAL
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.RELEASES
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.SERIES
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.SERIES_POSTER
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.SERVER_SETTINGS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.SYNCPOINTS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.TASKS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.USERS
+import org.gotson.komga.infrastructure.openapi.OpenApiConfiguration.TagNames.USER_SESSION
+import org.springdoc.core.customizers.OperationCustomizer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
+import org.springframework.security.access.prepost.PreAuthorize
 
 @Configuration
 class OpenApiConfiguration(
   @Value("\${application.version}") private val appVersion: String,
+  env: Environment,
 ) {
+  private val generateOpenApi = env.activeProfiles.contains("generate-openapi")
+
   @Bean
-  fun openApi(): OpenAPI =
-    OpenAPI()
+  fun openApi(): OpenAPI {
+    val logoutOperation =
+      Operation()
+        .tags(listOf(USER_SESSION))
+        .summary("Logout")
+        .description("Invalidates the current session and clean up any remember-me authentication.")
+        .responses(ApiResponses().addApiResponse("204", ApiResponse().description("No Content")))
+
+    return OpenAPI()
       .info(
         Info()
           .title("Komga API")
@@ -84,14 +98,14 @@ class OpenApiConfiguration(
 
             Upon successful authentication, a session is created, and can be reused.
 
-            - By default, a `SESSION` cookie is set via `Set-Cookie` response header. This works well for browsers and clients that can handle cookies.
+            - By default, a `KOMGA-SESSION` cookie is set via `Set-Cookie` response header. This works well for browsers and clients that can handle cookies.
             - If you specify a header `X-Auth-Token` during authentication, the session ID will be returned via this same header. You can then pass that header again for subsequent requests to reuse the session.
 
             If you need to set the session cookie later on, you can call `/api/v1/login/set-cookie` with `X-Auth-Token`. The response will contain the `Set-Cookie` header.
 
             ## Remember Me
 
-            During authentication, if a request parameter `remember-me` is passed and set to `true`, the server will also return a `remember-me` cookie. This cookie will be used to login automatically even if the session has expired.
+            During authentication, if a request parameter `remember-me` is passed and set to `true`, the server will also return a `komga-remember-me` cookie. This cookie will be used to login automatically even if the session has expired.
 
             ## Logout
 
@@ -109,51 +123,73 @@ class OpenApiConfiguration(
       ).components(
         Components()
           .addSecuritySchemes(
-            "basicAuth",
+            SecuritySchemes.BASIC_AUTH,
             SecurityScheme()
               .type(SecurityScheme.Type.HTTP)
               .scheme("basic"),
           ).addSecuritySchemes(
-            "apiKey",
+            SecuritySchemes.API_KEY,
             SecurityScheme()
               .type(SecurityScheme.Type.APIKEY)
               .`in`(SecurityScheme.In.HEADER)
               .name("X-API-Key"),
           ),
+      ).security(
+        listOf(
+          SecurityRequirement().addList(SecuritySchemes.BASIC_AUTH),
+          SecurityRequirement().addList(SecuritySchemes.API_KEY),
+        ),
       ).tags(tags)
       .extensions(mapOf("x-tagGroups" to tagGroups))
-      .servers(
-        listOf(
-          Server()
-            .url("http://localhost:{port}")
-            .description("Local development server")
-            .variables(
-              ServerVariables()
-                .addServerVariable(
-                  "port",
-                  ServerVariable()
-                    .addEnumItem("8080")
-                    .addEnumItem("25600"),
+      .apply {
+        if (generateOpenApi)
+          servers(
+            listOf(
+              Server()
+                .url("https://demo.komga.org")
+                .description("Demo server"),
+              Server()
+                .url("http://localhost:{port}")
+                .description("Local development server")
+                .variables(
+                  ServerVariables()
+                    .addServerVariable(
+                      "port",
+                      ServerVariable()
+                        .addEnumItem("8080")
+                        .addEnumItem("25600")
+                        ._default("25600"),
+                    ),
                 ),
             ),
-          Server()
-            .url("https://demo.komga.org")
-            .description("Demo server"),
-        ),
-      ).path(
+          )
+      }.path(
         "/api/logout",
         PathItem()
           .summary("Logout current session")
           .get(logoutOperation.operationId("getLogout"))
           .post(logoutOperation.operationId("postLogout")),
       )
+  }
 
-  private val logoutOperation =
-    Operation()
-      .tags(listOf(USER_SESSION))
-      .summary("Logout")
-      .description("Invalidates the current session and clean up any remember-me authentication.")
-      .responses(ApiResponses().addApiResponse("204", ApiResponse().description("No Content")))
+  @Bean
+  fun roleDescriptionCustomizer(): OperationCustomizer {
+    val hasRoleRegex = Regex("""hasRole\('(?<role>\w+)'\)""")
+
+    return OperationCustomizer { operation, handlerMethod ->
+      val preAuthorize =
+        handlerMethod.getMethodAnnotation(PreAuthorize::class.java)
+          ?: handlerMethod.beanType.getAnnotation(PreAuthorize::class.java)
+      if (preAuthorize != null) {
+        val roles = hasRoleRegex.findAll(preAuthorize.value).mapNotNull { it.groups["role"]?.value }.toList()
+        if (roles.isNotEmpty()) {
+          val description = if (operation.description == null) "" else (operation.description + "\n\n")
+          operation.description = description + "Required role: **${roles.joinToString()}**"
+        }
+      }
+      operation
+    }
+  }
 
   data class TagGroup(
     val name: String,
@@ -247,6 +283,11 @@ class OpenApiConfiguration(
         ),
       ),
     )
+
+  object SecuritySchemes {
+    const val BASIC_AUTH = "basicAuth"
+    const val API_KEY = "apiKey"
+  }
 
   object TagNames {
     const val DEPRECATED = "Deprecated"

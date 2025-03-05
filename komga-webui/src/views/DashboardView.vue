@@ -2,7 +2,7 @@
   <div :style="$vuetify.breakpoint.xs ? 'margin-bottom: 56px' : undefined">
     <toolbar-sticky v-if="individualLibrary && selectedSeries.length === 0 && selectedBooks.length === 0">
       <!--   Action menu   -->
-      <library-actions-menu v-if="library"
+      <library-actions-menu v-if="isAdmin && library"
                             :library="library"/>
 
       <v-toolbar-title>
@@ -94,7 +94,7 @@
           bottom
           right
           fixed
-          :class="$vuetify.breakpoint.smAndDown ? 'mb-12' : undefined"
+          :class="individualLibrary && $vuetify.breakpoint.smAndDown ? 'mb-12' : undefined"
           @click="modalEditRecommended = true"
         >
           <v-icon>mdi-pencil</v-icon>
