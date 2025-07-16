@@ -1,6 +1,5 @@
 package org.gotson.komga.infrastructure.jooq.main
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gotson.komga.domain.model.SearchContext
 import org.gotson.komga.domain.model.SearchField
 import org.gotson.komga.domain.model.SeriesSearch
@@ -10,7 +9,6 @@ import org.gotson.komga.infrastructure.jooq.SeriesSearchHelper
 import org.gotson.komga.infrastructure.jooq.csAlias
 import org.gotson.komga.infrastructure.jooq.inOrNoCondition
 import org.gotson.komga.infrastructure.jooq.insertTempStrings
-import org.gotson.komga.infrastructure.jooq.noCase
 import org.gotson.komga.infrastructure.jooq.selectTempStrings
 import org.gotson.komga.infrastructure.jooq.sortByValues
 import org.gotson.komga.infrastructure.jooq.toSortField
@@ -49,8 +47,6 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import java.net.URL
 
-private val logger = KotlinLogging.logger {}
-
 const val BOOKS_UNREAD_COUNT = "booksUnreadCount"
 const val BOOKS_IN_PROGRESS_COUNT = "booksInProgressCount"
 const val BOOKS_READ_COUNT = "booksReadCount"
@@ -59,7 +55,7 @@ const val BOOKS_READ_COUNT = "booksReadCount"
 class SeriesDtoDao(
   private val dsl: DSLContext,
   private val luceneHelper: LuceneHelper,
-  @Value("#{@komgaProperties.database.batchChunkSize}") private val batchSize: Int,
+  @param:Value("#{@komgaProperties.database.batchChunkSize}") private val batchSize: Int,
   private val transactionTemplate: TransactionTemplate,
 ) : SeriesDtoRepository {
   private val s = Tables.SERIES
@@ -85,7 +81,7 @@ class SeriesDtoDao(
 
   private val sorts =
     mapOf(
-      "metadata.titleSort" to d.TITLE_SORT.noCase(),
+      "metadata.titleSort" to d.TITLE_SORT.collate(SqliteUdfDataSource.COLLATION_UNICODE_3),
       "createdDate" to s.CREATED_DATE,
       "created" to s.CREATED_DATE,
       "lastModifiedDate" to s.LAST_MODIFIED_DATE,

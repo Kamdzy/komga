@@ -1,7 +1,6 @@
 package org.gotson.komga.infrastructure.jooq.main
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gotson.komga.domain.model.BookPage
 import org.gotson.komga.domain.model.Dimension
 import org.gotson.komga.domain.model.Media
@@ -26,12 +25,10 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-private val logger = KotlinLogging.logger {}
-
 @Component
 class MediaDao(
   private val dsl: DSLContext,
-  @Value("#{@komgaProperties.database.batchChunkSize}") private val batchSize: Int,
+  @param:Value("#{@komgaProperties.database.batchChunkSize}") private val batchSize: Int,
   private val mapper: ObjectMapper,
 ) : MediaRepository {
   private val m = Tables.MEDIA

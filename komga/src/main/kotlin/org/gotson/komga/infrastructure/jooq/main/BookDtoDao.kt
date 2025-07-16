@@ -53,7 +53,7 @@ import java.net.URL
 class BookDtoDao(
   private val dsl: DSLContext,
   private val luceneHelper: LuceneHelper,
-  @Value("#{@komgaProperties.database.batchChunkSize}") private val batchSize: Int,
+  @param:Value("#{@komgaProperties.database.batchChunkSize}") private val batchSize: Int,
   private val transactionTemplate: TransactionTemplate,
   private val bookCommonDao: BookCommonDao,
 ) : BookDtoRepository {
@@ -72,7 +72,7 @@ class BookDtoDao(
   private val sorts =
     mapOf(
       "name" to b.NAME.collate(SqliteUdfDataSource.COLLATION_UNICODE_3),
-      "series" to sd.TITLE_SORT.noCase(),
+      "series" to sd.TITLE_SORT.collate(SqliteUdfDataSource.COLLATION_UNICODE_3),
       "created" to b.CREATED_DATE,
       "createdDate" to b.CREATED_DATE,
       "lastModified" to b.LAST_MODIFIED_DATE,

@@ -33,7 +33,7 @@ class EpubExtractor(
   private val contentDetector: ContentDetector,
   private val imageAnalyzer: ImageAnalyzer,
   private val kepubConverter: KepubConverter,
-  @Value("#{@komgaProperties.epubDivinaLetterCountThreshold}") private val letterCountThreshold: Int,
+  @param:Value("#{@komgaProperties.epubDivinaLetterCountThreshold}") private val letterCountThreshold: Int,
 ) {
   /**
    * Retrieves a specific entry by name from the zip archive
@@ -324,7 +324,7 @@ class EpubExtractor(
       file.fileName to
         doc?.select("span.koboSpan")?.mapNotNull { koboSpan ->
           val id = koboSpan.id()
-          if (!id.isNullOrBlank()) {
+          if (id.isNotBlank()) {
             // progression is built from the position in the file of each koboSpan, divided by the file size
             val progression = koboSpan.sourceRange().endPos().toFloat() / file.fileSize!!.toFloat()
             Pair(id, progression)

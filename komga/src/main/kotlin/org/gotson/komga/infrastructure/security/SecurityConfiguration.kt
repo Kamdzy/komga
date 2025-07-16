@@ -1,6 +1,5 @@
 package org.gotson.komga.infrastructure.security
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.Filter
 import org.gotson.komga.domain.model.UserRoles
 import org.gotson.komga.infrastructure.configuration.KomgaSettingsProvider
@@ -23,7 +22,6 @@ import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.userdetails.UserDetailsService
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
@@ -36,9 +34,7 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher
-
-private val logger = KotlinLogging.logger {}
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher
 
 @Configuration
 @EnableWebSecurity
@@ -124,7 +120,7 @@ class SecurityConfiguration(
           it.maximumSessions(-1)
         }
       }.exceptionHandling {
-        it.defaultAuthenticationEntryPointFor(opdsAuthenticationEntryPoint, AntPathRequestMatcher("/opds/v2/**"))
+        it.defaultAuthenticationEntryPointFor(opdsAuthenticationEntryPoint, PathPatternRequestMatcher.withDefaults().matcher("/opds/v2/**"))
       }
 
     if (oauth2Enabled) {
@@ -170,7 +166,6 @@ class SecurityConfiguration(
   @Bean
   fun koboFilterChain(
     http: HttpSecurity,
-    encoder: PasswordEncoder,
   ): SecurityFilterChain {
     http {
       cors {}
@@ -209,7 +204,6 @@ class SecurityConfiguration(
   @Bean
   fun kosyncFilterChain(
     http: HttpSecurity,
-    encoder: PasswordEncoder,
   ): SecurityFilterChain {
     http {
       cors {}
@@ -245,7 +239,7 @@ class SecurityConfiguration(
   fun koboAuthenticationFilter(): Filter =
     ApiKeyAuthenticationFilter(
       apiKeyAuthenticationProvider(),
-      UriRegexApiKeyAuthenticationConverter(Regex("""\/kobo\/([\w-]+)"""), tokenEncoder, userAgentWebAuthenticationDetailsSource),
+      UriRegexApiKeyAuthenticationConverter(Regex("""/kobo/([\w-]+)"""), tokenEncoder, userAgentWebAuthenticationDetailsSource),
     )
 
   fun kosyncAuthenticationFilter(): Filter =

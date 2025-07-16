@@ -148,9 +148,9 @@ class WebPubGenerator(
   ): WPPublicationDto {
     val uriBuilder = ServletUriComponentsBuilder.fromCurrentContextPath().pathSegment(*pathSegments.toTypedArray())
     val extension =
-      when {
-        media.extension is ProxyExtension && media.extension.proxyForType<MediaExtensionEpub>() -> mediaRepository.findExtensionByIdOrNull(media.bookId) as? MediaExtensionEpub
-        media.extension is MediaExtensionEpub -> media.extension
+      when (media.extension) {
+        is ProxyExtension if media.extension.proxyForType<MediaExtensionEpub>() -> mediaRepository.findExtensionByIdOrNull(media.bookId) as? MediaExtensionEpub
+        is MediaExtensionEpub -> media.extension
         else -> null
       }
     return toBasePublicationDto(bookDto).let { publication ->
@@ -210,7 +210,7 @@ class WebPubGenerator(
       children = children.map { it.toWPLinkDto(uriBuilder) },
     )
 
-  protected open fun toWPMetadataDto(bookDto: BookDto) =
+  protected fun toWPMetadataDto(bookDto: BookDto) =
     WPMetadataDto(
       title = bookDto.metadata.title,
       description = bookDto.metadata.summary,
