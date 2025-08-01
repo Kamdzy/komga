@@ -8,7 +8,7 @@ plugins {
   kotlin("jvm")
   kotlin("plugin.spring")
   kotlin("kapt")
-  id("org.springframework.boot") version "3.5.3"
+  id("org.springframework.boot") version "3.5.4"
   id("com.gorylenko.gradle-git-properties") version "2.5.2"
   id("nu.studer.jooq") version "10.1"
   id("org.flywaydb.flyway") version "11.7.2"
@@ -37,7 +37,7 @@ dependencies {
   implementation(kotlin("stdlib"))
   implementation(kotlin("reflect"))
 
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.3"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.4"))
 
   api("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -48,10 +48,10 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
   implementation("org.springframework.boot:spring-boot-starter-jooq")
   implementation("org.springframework.session:spring-session-core")
-  implementation("com.github.gotson:spring-session-caffeine:2.0.0")
+  implementation("com.github.gotson:spring-session-caffeine:2.1.0")
   implementation("org.springframework.data:spring-data-commons")
 
-  kapt("org.springframework.boot:spring-boot-configuration-processor:3.5.3")
+  kapt("org.springframework.boot:spring-boot-configuration-processor:3.5.4")
 
   implementation("org.flywaydb:flyway-core")
 
@@ -111,7 +111,7 @@ dependencies {
   jooqGenerator("org.xerial:sqlite-jdbc:3.50.2.0")
 
   if (version.toString().endsWith(".0.0")) {
-    ksp("com.github.gotson.bestbefore:bestbefore-processor-kotlin:0.1.0")
+    ksp("com.github.gotson.bestbefore:bestbefore-processor-kotlin:0.2.0")
   }
 
   testImplementation("org.springframework.boot:spring-boot-starter-test") {
@@ -127,9 +127,9 @@ dependencies {
   benchmarkImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   benchmarkImplementation("org.openjdk.jmh:jmh-core:1.37")
   kaptBenchmark("org.openjdk.jmh:jmh-generator-annprocess:1.37")
-  kaptBenchmark("org.springframework.boot:spring-boot-configuration-processor:3.5.3")
+  kaptBenchmark("org.springframework.boot:spring-boot-configuration-processor:3.5.4")
 
-  developmentOnly("org.springframework.boot:spring-boot-devtools:3.5.3")
+  developmentOnly("org.springframework.boot:spring-boot-devtools:3.5.4")
 }
 
 kotlin {
