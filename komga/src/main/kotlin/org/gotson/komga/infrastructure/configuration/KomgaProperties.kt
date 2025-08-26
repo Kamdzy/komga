@@ -21,6 +21,7 @@ class KomgaProperties {
   private fun makeDirs() {
     try {
       Path(database.file).parent.createDirectories()
+      Path(tasksDb.file).parent.createDirectories()
     } catch (_: Exception) {
     }
   }
@@ -66,12 +67,14 @@ class KomgaProperties {
     @get:Positive
     var maxPoolSize: Int = 1
 
-    var journalMode: JournalMode? = null
+    var journalMode: JournalMode? = JournalMode.WAL
 
     @DurationUnit(ChronoUnit.SECONDS)
     var busyTimeout: Duration? = null
 
     var pragmas: Map<String, String> = emptyMap()
+
+    var checkLocalFilesystem: Boolean = true
   }
 
   class Fonts {
