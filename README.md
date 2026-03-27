@@ -47,7 +47,7 @@ Check the [development guidelines](./DEVELOPING.md).
 
 [![Translation status](https://hosted.weblate.org/widgets/komga/-/webui/horizontal-auto.svg)](https://hosted.weblate.org/engage/komga/)
 
-## Sponsors
+## Powered by
 
 [![Jetbrains_logo](./.github/readme-images/jetbrains.svg)](https://www.jetbrains.com/?from=Komga)
 
