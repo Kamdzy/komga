@@ -3,6 +3,7 @@ package org.gotson.komga.interfaces.api.kobo
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.treeToValue
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -174,6 +175,7 @@ class KoboController(
   private val imageConverter: ImageConverter,
   private val mediaRepository: MediaRepository,
   private val contentRestrictionChecker: ContentRestrictionChecker,
+  private val objectMapper: ObjectMapper,
 ) {
   private val cachedKepub =
     Caffeine
@@ -230,13 +232,15 @@ class KoboController(
    */
   @PostMapping("v1/auth/device")
   fun authDevice(
-    @RequestBody body: JsonNode,
+    @RequestBody rawBody: ByteArray,
   ): Any {
     try {
-      return koboProxy.proxyCurrentRequest(body)
+      return koboProxy.proxyCurrentRequest(rawBody)
     } catch (_: Exception) {
       logger.warn { "Failed to get response from Kobo /v1/auth/device, fallback to noproxy" }
     }
+
+    val body = objectMapper.readTree(rawBody)
 
     /**
      * Komga does not use the /v1/auth/device API call for authentication/authorization.
@@ -512,13 +516,17 @@ class KoboController(
    */
   @GetMapping("/v1/library/{bookId}/metadata")
   fun getBookMetadata(
+    @AuthenticationPrincipal principal: KomgaPrincipal,
     @PathVariable authToken: String,
     @PathVariable bookId: String,
   ): ResponseEntity<*> =
-    if (!bookRepository.existsById(bookId) && koboProxy.isEnabled())
+    if (!bookRepository.existsById(bookId) && koboProxy.isEnabled()) {
       koboProxy.proxyCurrentRequest()
-    else
+    } else {
+      contentRestrictionChecker.checkContentRestriction(principal.user, bookId)
+
       ResponseEntity.ok(koboDtoRepository.findBookMetadataByIds(listOf(bookId)).map { it.withDownloadUrls(getDownloadUrlBuilder(authToken)) })
+    }
 
   /**
    * @return an array of [ReadingStateDto]
@@ -535,6 +543,8 @@ class KoboController(
         else
           throw ResponseStatusException(HttpStatus.NOT_FOUND)
 
+    contentRestrictionChecker.checkContentRestriction(principal.user, book)
+
     val response = readProgressRepository.findByBookIdAndUserIdOrNull(bookId, principal.user.id)?.toDto() ?: getEmptyReadProgressForBook(book)
     return ResponseEntity.ok(listOf(response))
   }
@@ -546,15 +556,19 @@ class KoboController(
   fun updateState(
     @AuthenticationPrincipal principal: KomgaPrincipal,
     @PathVariable bookId: String,
-    @RequestBody body: ReadingStateStateUpdateDto,
+    @RequestBody rawBody: ByteArray,
     @RequestHeader(name = X_KOBO_DEVICEID, required = false) koboDeviceId: String = "unknown",
   ): ResponseEntity<*> {
+    val body = objectMapper.readValue<ReadingStateStateUpdateDto>(rawBody)
+
     val book =
       bookRepository.findByIdOrNull(bookId)
         ?: if (koboProxy.isEnabled())
-          return koboProxy.proxyCurrentRequest(body)
+          return koboProxy.proxyCurrentRequest(rawBody)
         else
           throw ResponseStatusException(HttpStatus.NOT_FOUND)
+
+    contentRestrictionChecker.checkContentRestriction(principal.user, book)
 
     val koboUpdate = body.readingStates.firstOrNull() ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST)
     if (koboUpdate.currentBookmark.location == null || koboUpdate.currentBookmark.contentSourceProgressPercent == null) throw ResponseStatusException(HttpStatus.BAD_REQUEST)
@@ -719,6 +733,8 @@ class KoboController(
         .location(UriComponentsBuilder.fromUriString(koboProxy.imageHostUrl).buildAndExpand(thumbnailId, width, height).toUri())
         .build()
     } else {
+      contentRestrictionChecker.checkContentRestrictionBookThumbnail(principal.user, thumbnailId)
+
       val poster = bookLifecycle.getThumbnailBytesByThumbnailId(thumbnailId) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
       val posterBytes =
         if (poster.mediaType != ImageType.JPEG.mediaType)
@@ -733,7 +749,7 @@ class KoboController(
     method = [RequestMethod.GET, RequestMethod.PUT, RequestMethod.POST, RequestMethod.DELETE, RequestMethod.PATCH],
   )
   fun catchAll(
-    @RequestBody body: Any?,
+    @RequestBody body: ByteArray?,
   ): ResponseEntity<JsonNode> =
     if (koboProxy.isEnabled())
       koboProxy.proxyCurrentRequest(body)

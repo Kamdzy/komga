@@ -35,12 +35,12 @@ jobs:
       version_next: ${{ steps.versions.outputs.version_next }}
       should_release: ${{ steps.versions.outputs.should_release }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up Homebrew
         id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@main
       - name: Install svu
         run: brew install --cask caarlos0/tap/svu
       - name: Compute next version for release
@@ -64,7 +64,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -103,7 +103,7 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build
         run: ./gradlew :komga:prepareThymeLeaf :komga:bootJar :komga-tray:jar
