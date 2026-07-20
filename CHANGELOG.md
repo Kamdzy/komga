@@ -1,3 +1,19 @@
+# [1.25.1](https://github.com/Kamdzy/komga/compare/1.25.0...1.25.1) (2026-07-20)
+## 🐛 Fixes
+**api**
+- preserve modified date in R2 progression ([a1ee74d](https://github.com/Kamdzy/komga/commits/a1ee74d))
+
+## 🏎 Perf
+**api**
+- deduplicate referential tag queries in SQL ([4ec1584](https://github.com/Kamdzy/komga/commits/4ec1584))
+
+## ⚙️ Dependencies
+**ci**
+- bump actions/setup-node from 6 to 7 ([acb0427](https://github.com/Kamdzy/komga/commits/acb0427))
+
+**webui**
+- bump websocket-driver from 0.7.4 to 0.7.5 in /komga-webui ([aea5ca1](https://github.com/Kamdzy/komga/commits/aea5ca1))
+
 # [1.25.0](https://github.com/gotson/komga/compare/1.24.4...1.25.0) (2026-06-30)
 ## 🚀 Features
 **komga**
