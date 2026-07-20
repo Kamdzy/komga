@@ -343,7 +343,7 @@ class ReferentialDao(
 
   override fun findAllSeriesTags(filterOnLibraryIds: Collection<String>?): Set<String> =
     dslRO
-      .select(st.TAG)
+      .selectDistinct(st.TAG)
       .from(st)
       .apply {
         filterOnLibraryIds?.let {
@@ -351,43 +351,46 @@ class ReferentialDao(
             .on(st.SERIES_ID.eq(s.ID))
             .where(s.LIBRARY_ID.`in`(it))
         }
-      }.orderBy(st.TAG.collate(SqliteUdfDataSource.COLLATION_UNICODE_3))
-      .fetchSet(st.TAG)
+      }.fetchSet(st.TAG)
+      .sortedBy { it.stripAccents().lowercase() }
+      .toSet()
 
   override fun findAllSeriesTagsByLibrary(
     libraryId: String,
     filterOnLibraryIds: Collection<String>?,
   ): Set<String> =
     dslRO
-      .select(st.TAG)
+      .selectDistinct(st.TAG)
       .from(st)
       .leftJoin(s)
       .on(st.SERIES_ID.eq(s.ID))
       .where(s.LIBRARY_ID.eq(libraryId))
       .apply { filterOnLibraryIds?.let { and(s.LIBRARY_ID.`in`(it)) } }
-      .orderBy(st.TAG.collate(SqliteUdfDataSource.COLLATION_UNICODE_3))
       .fetchSet(st.TAG)
+      .sortedBy { it.stripAccents().lowercase() }
+      .toSet()
 
   override fun findAllBookTagsBySeries(
     seriesId: String,
     filterOnLibraryIds: Collection<String>?,
   ): Set<String> =
     dslRO
-      .select(bt.TAG)
+      .selectDistinct(bt.TAG)
       .from(bt)
       .leftJoin(b)
       .on(bt.BOOK_ID.eq(b.ID))
       .where(b.SERIES_ID.eq(seriesId))
       .apply { filterOnLibraryIds?.let { and(b.LIBRARY_ID.`in`(it)) } }
-      .orderBy(bt.TAG.collate(SqliteUdfDataSource.COLLATION_UNICODE_3))
       .fetchSet(bt.TAG)
+      .sortedBy { it.stripAccents().lowercase() }
+      .toSet()
 
   override fun findAllBookTagsByReadList(
     readListId: String,
     filterOnLibraryIds: Collection<String>?,
   ): Set<String> =
     dslRO
-      .select(bt.TAG)
+      .selectDistinct(bt.TAG)
       .from(bt)
       .leftJoin(b)
       .on(bt.BOOK_ID.eq(b.ID))
@@ -395,27 +398,29 @@ class ReferentialDao(
       .on(bt.BOOK_ID.eq(rb.BOOK_ID))
       .where(rb.READLIST_ID.eq(readListId))
       .apply { filterOnLibraryIds?.let { and(b.LIBRARY_ID.`in`(it)) } }
-      .orderBy(bt.TAG.collate(SqliteUdfDataSource.COLLATION_UNICODE_3))
       .fetchSet(bt.TAG)
+      .sortedBy { it.stripAccents().lowercase() }
+      .toSet()
 
   override fun findAllSeriesTagsByCollection(
     collectionId: String,
     filterOnLibraryIds: Collection<String>?,
   ): Set<String> =
     dslRO
-      .select(st.TAG)
+      .selectDistinct(st.TAG)
       .from(st)
       .leftJoin(cs)
       .on(st.SERIES_ID.eq(cs.SERIES_ID))
       .apply { filterOnLibraryIds?.let { leftJoin(s).on(st.SERIES_ID.eq(s.ID)) } }
       .where(cs.COLLECTION_ID.eq(collectionId))
       .apply { filterOnLibraryIds?.let { and(s.LIBRARY_ID.`in`(it)) } }
-      .orderBy(st.TAG.collate(SqliteUdfDataSource.COLLATION_UNICODE_3))
       .fetchSet(st.TAG)
+      .sortedBy { it.stripAccents().lowercase() }
+      .toSet()
 
   override fun findAllBookTags(filterOnLibraryIds: Collection<String>?): Set<String> =
     dslRO
-      .select(bt.TAG)
+      .selectDistinct(bt.TAG)
       .from(bt)
       .apply {
         filterOnLibraryIds?.let {
@@ -423,8 +428,9 @@ class ReferentialDao(
             .on(bt.BOOK_ID.eq(b.ID))
             .where(b.LIBRARY_ID.`in`(it))
         }
-      }.orderBy(bt.TAG.collate(SqliteUdfDataSource.COLLATION_UNICODE_3))
-      .fetchSet(bt.TAG)
+      }.fetchSet(bt.TAG)
+      .sortedBy { it.stripAccents().lowercase() }
+      .toSet()
 
   override fun findAllLanguages(filterOnLibraryIds: Collection<String>?): Set<String> =
     dslRO
