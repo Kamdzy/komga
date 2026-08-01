@@ -1,62 +1,55 @@
 package org.gotson.komga.infrastructure.jooq
 
-import com.github.f4b6a3.tsid.TsidCreator
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import java.io.Closeable
 
 /**
- * Temporary table with a single STRING column.
- * This is made to store collection of values that are too long to be specified in a query condition,
- * by using a sub-select instead.
+ * Holds a collection of values that are too long to be specified in a query condition,
+ * and exposes them as a sub-select.
  *
- * The table name is automatically generated, and the table is dropped when the object is closed.
+ * Backed by SQLite's json_each(): the whole collection travels as a single bind variable, so the
+ * sub-select is valid on any connection.
+ *
+ * This used to be backed by CREATE TEMPORARY TABLE. SQLite scopes TEMP tables to the connection that
+ * created them, while jOOQ acquires and releases a pooled connection per statement. With
+ * komga.database.max-pool-size > 1 (which only widens the read pool, the write pool is pinned to 1)
+ * the CREATE and the statements that followed could land on different connections, failing with
+ * "[SQLITE_ERROR] no such table: temp_XXXX" from any DAO method not running inside a transaction,
+ * such as BookDtoDao.findAll or findAllOnDeck.
+ *
+ * The Closeable shape is kept so that call sites do not need to change; close() is a no-op.
  */
-class TempTable private constructor(
+class TempTable(
   private val dslContext: DSLContext,
-  val name: String,
 ) : Closeable {
-  constructor(dslContext: DSLContext) : this(dslContext, generateName())
+  private val values = mutableListOf<String>()
 
-  private var created = false
-
-  fun create() {
-    dslContext.execute("CREATE TEMPORARY TABLE $name (STRING varchar NOT NULL);")
-    created = true
-  }
-
+  // batchSize is unused, there is nothing to batch: kept so existing call sites are unchanged
   fun insertTempStrings(
     batchSize: Int,
     collection: Collection<String>,
   ) {
-    if (!created) create()
-    if (collection.isNotEmpty()) {
-      collection.chunked(batchSize).forEach { chunk ->
-        dslContext
-          .batch(
-            dslContext.insertInto(DSL.table(DSL.name(name)), DSL.field(DSL.name("STRING"), String::class.java)).values(null as String?),
-          ).also { step ->
-            chunk.forEach {
-              step.bind(it)
-            }
-          }.execute()
-      }
-    }
+    values.addAll(collection)
   }
 
-  fun selectTempStrings() = dslContext.select(DSL.field(DSL.name("STRING"), String::class.java)).from(DSL.table(DSL.name(name)))
+  fun selectTempStrings() =
+    dslContext
+      .select(DSL.field(DSL.name("value"), String::class.java))
+      .from(DSL.table("json_each({0})", DSL.`val`(objectMapper.writeValueAsString(values))))
 
   override fun close() {
-    if (created) dslContext.dropTableIfExists(name).execute()
+    // nothing to clean up
   }
 
   companion object {
-    private fun generateName() = "temp_${TsidCreator.getTsid256()}"
+    private val objectMapper = ObjectMapper()
 
     fun DSLContext.withTempTable(
       batchSize: Int,
       collection: Collection<String>,
-    ) = TempTable(this, generateName())
+    ) = TempTable(this)
       .also {
         it.insertTempStrings(batchSize, collection)
       }
