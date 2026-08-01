@@ -46,8 +46,13 @@ class TempTableTest {
   @Test
   fun `given a connection per statement when using withTempTable then the sub-select resolves`() {
     dsl.withTempTable(1000, listOf("BK1", "BK3")).use { tempTable ->
-      assertThat(dsl.select(id).from(book).where(id.`in`(tempTable.selectTempStrings())).fetch(id))
-        .containsExactlyInAnyOrder("BK1", "BK3")
+      assertThat(
+        dsl
+          .select(id)
+          .from(book)
+          .where(id.`in`(tempTable.selectTempStrings()))
+          .fetch(id),
+      ).containsExactlyInAnyOrder("BK1", "BK3")
     }
   }
 
@@ -56,16 +61,33 @@ class TempTableTest {
     // mirrors BookDtoDao.findAll, which constructs TempTable directly "to control optional creation"
     TempTable(dsl).use { tempTable ->
       tempTable.insertTempStrings(1000, listOf("BK0"))
-      assertThat(dsl.select(id).from(book).where(id.`in`(tempTable.selectTempStrings())).fetch(id))
-        .containsExactly("BK0")
+      assertThat(
+        dsl
+          .select(id)
+          .from(book)
+          .where(id.`in`(tempTable.selectTempStrings()))
+          .fetch(id),
+      ).containsExactly("BK0")
     }
   }
 
   @Test
   fun `given an empty collection then in matches nothing and notIn matches everything`() {
     dsl.withTempTable(1000, emptyList()).use { tempTable ->
-      assertThat(dsl.select(id).from(book).where(id.`in`(tempTable.selectTempStrings())).fetch(id)).isEmpty()
-      assertThat(dsl.select(id).from(book).where(id.notIn(tempTable.selectTempStrings())).fetch(id)).hasSize(5)
+      assertThat(
+        dsl
+          .select(id)
+          .from(book)
+          .where(id.`in`(tempTable.selectTempStrings()))
+          .fetch(id),
+      ).isEmpty()
+      assertThat(
+        dsl
+          .select(id)
+          .from(book)
+          .where(id.notIn(tempTable.selectTempStrings()))
+          .fetch(id),
+      ).hasSize(5)
     }
   }
 
@@ -75,8 +97,13 @@ class TempTableTest {
     // 3 and 7 times respectively on a single TempTable
     dsl.withTempTable(1000, listOf("BK2", "BK4")).use { tempTable ->
       repeat(7) {
-        assertThat(dsl.select(id).from(book).where(id.`in`(tempTable.selectTempStrings())).fetch(id))
-          .containsExactlyInAnyOrder("BK2", "BK4")
+        assertThat(
+          dsl
+            .select(id)
+            .from(book)
+            .where(id.`in`(tempTable.selectTempStrings()))
+            .fetch(id),
+        ).containsExactlyInAnyOrder("BK2", "BK4")
       }
     }
   }
